@@ -1,0 +1,72 @@
+<html>
+    <head>
+        <title>GQLstore</title>
+        <meta charset='utf8' />
+        <style>
+            #mainContainer {
+                padding-top: 2%;
+                display: flex;
+                max-width: 80%;
+            }
+            #aside {
+              
+                width: 30%;
+            }
+            #aside > a{
+                display: block;
+            }
+            header {
+                display: flex;
+               align-items: center;
+               justify-content: space-evenly;
+             
+                min-height: 100px;
+                background-color: #AAA;
+            }
+            .cartIcon{width: 40px;
+               height: 40px;}
+              
+            #loginFormContainer {
+                display: none;
+              }
+              a{
+                top:5px;
+                right: 10px;
+              }
+            #loginButton, #unloginbutton{
+                font-size: 16px;
+                border-radius: 6px;
+                margin-right: 30px;
+                margin-bottom: 20px;
+            }
+
+        </style>
+    </head>
+    <body>
+        <header>
+            <div id='cartIcon'>5
+                <a>
+                    <img class="cartIcon"  src="./koshik.svg" alt="Кошик для покупок"></img>
+                </a>
+                <a href="#/cart">Оформити замовлення</a>
+            </div>
+            <div id="login">            
+            </div>
+            <a href="#/register">Зареєструватися </a>
+            <a href="#/login" id="loginFormContainer"> Увійти</a>
+            <a href="#/logout">Вийти</a>
+            
+            
+        </header>
+        <div id='mainContainer'>
+            <aside id='aside'>
+                Категорії
+                
+            </aside>
+            <main id='main'>
+                Контент
+            </main>
+        </div>
+        <script src="./index.js"></script>
+    </body>
+</html>
