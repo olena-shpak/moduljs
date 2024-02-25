@@ -26,35 +26,29 @@
             .cartIcon{width: 40px;
                height: 40px;}
               
-            #loginFormContainer {
-                display: none;
-              }
-              a{
-                top:5px;
-                right: 10px;
-              }
+           
+             
             #loginButton, #unloginbutton{
                 font-size: 16px;
                 border-radius: 6px;
                 margin-right: 30px;
                 margin-bottom: 20px;
             }
-
+         
         </style>
     </head>
     <body>
         <header>
-            <div id='cartIcon'>5
-                <a>
-                    <img class="cartIcon"  src="./koshik.svg" alt="Кошик для покупок"></img>
-                </a>
-                <a href="#/cart">Оформити замовлення</a>
+            <div id='cartIcon'>
+                 <img class="cartIcon"  src="./koshik.svg" alt="Кошик для покупок"></img>
+             
             </div>
-            <div id="login">            
-            </div>
+            <a href="#/cart">Кошик</a>
+            <a href="#/history">Історія замовлень</a>
             <a href="#/register">Зареєструватися </a>
-            <a href="#/login" id="loginFormContainer"> Увійти</a>
-            <a href="#/logout">Вийти</a>
+            <div id="login"> </div>
+            <a href="#/login" id="loginFormContainer"> Авторизація</a> 
+            <a href="#" onclick="store.dispatch(actionAuthLogout()); return false;">Вийти</a>
             
             
         </header>
