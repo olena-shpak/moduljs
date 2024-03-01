@@ -94,6 +94,7 @@ function combineReducers(reducers) {
 }
 
 function cartReducer(state = {}, action) {
+    // debugger
     if (action.type === 'CART_ADD') {
         return {
             ...state,
@@ -109,6 +110,7 @@ function cartReducer(state = {}, action) {
             delete newState[action.good._id];
             return newState;
         }
+
         return {
             ...state,
             [action.good._id]: {
@@ -128,6 +130,7 @@ function cartReducer(state = {}, action) {
         return {};
     }
     return state;
+
 }
 
 // Типи екшенів
@@ -177,10 +180,11 @@ const actionAuthLogin = (token) => ({ type: 'AUTH_LOGIN', token });
 const actionAuthLogout = () => ({ type: 'AUTH_LOGOUT' });
 
 const reducers = {
-    promise: promiseReducer, 
-    //допилить много имен для многих промисо
+    promise: promiseReducer,
+
     auth: localStoredReducer(authReducer, "auth"),
-    cart: localStoredReducer(cartReducer, "cart")
+    cart: localStoredReducer(cartReducer, "cart"),
+
 }
 
 const totalReducer = combineReducers(reducers)
@@ -191,7 +195,7 @@ function promiseReducer(state = {}, action) {
         return {
             ...state,
             [namePromise]: {
-                type,
+
                 status,
                 payload,
                 error
@@ -243,7 +247,7 @@ const drawCategory = () => {
             div.innerHTML +=
                 `
             <a href = "#/good/${_id}">${name}</a>
-            <div><img style= "max-width:25vw" src="http://shop-roles.node.ed.asmer.org.ua/${images && images[0] && images[0].url}"></div>
+            <div><img style= "max-width:20vw", "max-hight:20vh" src="http://shop-roles.node.ed.asmer.org.ua/${images && images[0] && images[0].url}"></div>
             <p>Ціна: ${price} грн.</p>
             <button class="add-to-cart-button" data-_id="${_id}" data-name="${name}" data-price="${price}"> Додати в кошик </button>
 
@@ -261,96 +265,243 @@ store.subscribe(drawCategory)
 
 const drawCart = (cartItems = []) => {
     const [, route] = location.hash.split('/');
-    if (route !== 'cart') return;
-
-    const cartContainer = document.querySelector('.cart-container');
-
-    // Очищаємо вміст кошика перед додаванням нового вмісту
+    if (route !== 'cart') return
+    const { cart } = store.getState();
+    cartItems = Object.values(cart);
     main.innerHTML = '';
 
-    // Перевіряємо, чи кошик не порожній
     if (cartItems.length === 0) {
-        cartContainer.textContent = 'Кошик порожній';
+        main.textContent = 'Кошик порожній';
         return;
     }
-    let totalAmount =0;
+    main.innerHTML = '<h2>Ваші замовлення</h2>'
+
+
+    let totalAmount = 0;
+    let totalCount = 0;
 
     cartItems.forEach(item => {
-        const { _id, good, count, images } = item;
+        const { good, count } = item;
+        const { _id, name, price, images } = good;
         const div = document.createElement('div');
-        const subtotal = good.price * count;
-        totalAmount+=subtotal;
-        div.innerHTML = `
-            <a href="#/cart/${_id}">${good.name}</a>
-            <div><img style="max-width: 15vw;" src="http://shop-roles.node.ed.asmer.org.ua/${images && images[0] && images[0].url}"></div>
-            <p>Ціна: ${good.price} грн.</p>
-            <p>Кількість: ${count}</p>
-            <p>Загальна сума: ${subtotal} грн.</p>
-            <button class="increase-quantity" data-id="${item._id}">+</button>
-            <button class="decrease-quantity" data-id="${item._id}">-</button>
-            <button class="remove-from-cart" data-id="${item._id}">Видалити</button>
-            
+        const subtotal = price * count;
+        totalAmount += subtotal;
+        totalCount += count;
+        div.innerHTML += `
+            <a href="#/cart/${_id}">${name}</a>
+            <div><img style="max-width:20vw", "max-hight:20vh" src="http://shop-roles.node.ed.asmer.org.ua/${images && images[0] && images[0].url}"></div>
+            <p>Ціна: ${price} грн.</p>
+            <input class="quantity-input" type="number" placeholder="Кількість" value="${item.count}">
+           
         `;
-        
-        
+        const increaseButtons = document.createElement('button');
+        increaseButtons.innerText = "+";
+        increaseButtons.onclick = () => store.dispatch(actionCartAdd(good))
+        console.log(good)
+        const decreaseButtons = document.createElement('button');
+
+        decreaseButtons.innerText = "-";
+        decreaseButtons.onclick = () => store.dispatch(actionCartSub(good));
+
+        const removeButtons = document.createElement('button');
+        removeButtons.innerText = "Видалити";
+        removeButtons.onclick = () => store.dispatch(actionCartDel(good))
+
+        div.appendChild(increaseButtons);
+        div.appendChild(decreaseButtons);
+        div.appendChild(removeButtons);
         main.appendChild(div);
-        const increaseButtons = document.querySelectorAll('.increase-quantity');
-
-const decreaseButtons = document.querySelectorAll('.decrease-quantity');
-
-const removeButtons = document.querySelectorAll('.remove-from-cart');
-
-
-
-increaseButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const itemId = button.dataset.id;
-        store.dispatch(actionCartAdd(itemId));
-        console.log(good._id)
     });
-});
 
+    const totalDiv = document.createElement('div');
+    totalDiv.textContent = `Загальна сума замовлення: ${totalAmount} грн.`;
+    main.appendChild(totalDiv);
 
-decreaseButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const itemId = button.dataset.id;
-        store.dispatch(actionCartSub(itemId)); 
+    const totalCountDiv = document.createElement('div');
+    totalCountDiv.textContent = `Загальна кількість товарів: ${totalCount}`;
+    main.appendChild(totalCountDiv);
+
+    const orderButton = document.createElement('button');
+    orderButton.textContent = 'Оформити замовлення';
+    orderButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        store.dispatch(actionFullOrder());
+
+        store.dispatch(actionCartClear());
     });
-});
+    main.appendChild(orderButton);
+};
+store.subscribe(drawCart)
 
 
-removeButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const itemId = button.dataset.id; 
-        store.dispatch(actionCartDel(itemId));
-    });
-});
 
-const totalDiv = document.createElement('div');
-totalDiv.textContent = `Загальна сума замовлення: ${totalAmount} грн.`;
-main.appendChild(totalDiv)
 
-const orderButton = document.createElement('button');
-orderButton.classList.add('order-button');
-orderButton.textContent = 'Оформити замовлення';
-main.appendChild(orderButton);
+const drawHistory =() => {
+    const [, route] = location.hash.split('/');
+    if (route !== 'history') return;
 
-// Додаємо обробник подій для кнопки "Оформити замовлення"
-orderButton.addEventListener('click', () => {
-    store.dispatch(actionFullOrder());
-
-   main.innerHTML =" Дякуємо, ваше замовлення оформлено! ";
-
-   store.dispatch(actionCartClear())
-});
-    });
+    const { status, payload, error } = store.getState().promise.orderFind ;
+    if (status === 'PENDING') {
+        main.innerHTML = `<img src='https://cdn.dribbble.com/users/63485/screenshots/1309731/infinite-gif-preloader.gif' />`;
+    }
+    if (status === 'FULFILLED') {
+        const orders = payload.OrderFind;
+        if (!orders || orders.length === 0) {
+            main.innerHTML = `<p>Ви ще не зробили жодного замовлення.</p>`;
+            return;
+        }
+        const token = store.getState().auth.token;
     
+    if (!token ) {
+        main.textContent += 'Необхідно увійти для перегляду історії замовлень';
+        return;
+    } 
 
+    main.innerHTML = '<h3>Ваші замовлення</h3>';
+
+        orders.forEach(order => {
+            const { _id, total, createdAt, orderGoods } = order;
+            const date = new Date(createdAt * 1000);
+
+            const orderElement = document.createElement('div');
+            orderElement.classList.add('order');
+
+            const orderId = document.createElement('p');
+            orderId.textContent = ` ${_id}`;
+            orderElement.appendChild(orderId);
+
+            const orderTotal = document.createElement('p');
+            orderTotal.textContent = `Загальна сума: ${total} грн.`;
+            orderElement.appendChild(orderTotal);
+
+            const orderDate = document.createElement('p');
+            orderDate.textContent = `Дата замовлення: ${date.toLocaleString()}`;
+            orderElement.appendChild(orderDate);
+
+            const goodsList = document.createElement('ul');
+            orderGoods.forEach(orderGood => {
+                const { good, count, total } = orderGood;
+                const { _id, name, price } = good;
+                const goodItem = document.createElement('li');
+                goodItem.innerHTML = `
+                    <p>${_id}${name}</p>
+                    <p>Кількість: ${count}</p>
+                    <p>Ціна за одиницю: ${price} грн.</p>
+                    <p>Загальна кількість ${total}</p>
+                `;
+                goodsList.appendChild(goodItem);
+            });
+            orderElement.appendChild(goodsList);
+
+            main.appendChild(orderElement);
+        });
+    }
+};store.subscribe(drawHistory)
+
+
+
+
+const actionOrderFind = () => (dispatch, getState) => {
     
+    const { cart } = getState();
+    const orderGoods = Object.values(cart).map(item => ({
+        good: { _id: item.good._id },
+        count: item.count
+    }));
+        const variables = { o: orderGoods };
 
+        return dispatch(actionPromise('orderFind', gql(
+            `query myOrder {
+                OrderFind(query: "[{}]") {
+                  _id total createdAt
+                    orderGoods{
+                      good{_id name price}
+                      count
+                      total
+                    }
+                     
+                  }
+                }`, variables)
+        )).then(result => {
+            console.log(result);
+            if (result !== null && 'token' in getState().auth) {
+                return result;
+            } else {
+                return "Помилка в доступі до історії замовлень";
+            }
+        }).catch(error => {
+            console.error('Помилка при отриманні історії замовлень:', error.message);
+            return "Помилка при отриманні історії замовлень";
+        });
+    } 
 
+const historyOrders = async () => {
+    try {
+        const result = await store.dispatch(actionOrderFind());
+        const { status, payload, error } = result || {};
+        
+        if (status === 'FULFILLED') {
+            const orders = payload.OrderFind;
+            if (!orders || orders.length === 0) {
+                main.innerHTML = `<p>Ви ще не зробили жодного замовлення.</p>`;
+                return;
+            }
+            const token = store.getState().auth.token;
+        
+            if (!token) {
+                main.textContent += 'Необхідно увійти для перегляду історії замовлень';
+                return;
+            } 
+        
+            main.innerHTML = '<h3>Ваші замовлення</h3>';
+
+            orders.forEach(order => {
+                const { _id, total, createdAt, orderGoods } = order;
+                const date = new Date(createdAt * 1000);
+
+                const orderElement = document.createElement('div');
+                orderElement.classList.add('order');
+
+                const orderId = document.createElement('p');
+                orderId.textContent = `Замовлення № ${_id}`;
+                orderElement.appendChild(orderId);
+
+                const orderTotal = document.createElement('p');
+                orderTotal.textContent = `Загальна сума: ${total} грн.`;
+                orderElement.appendChild(orderTotal);
+
+                const orderDate = document.createElement('p');
+                orderDate.textContent = `Дата замовлення: ${date.toLocaleString()}`;
+                orderElement.appendChild(orderDate);
+
+                const goodsList = document.createElement('ul');
+                orderGoods.forEach(orderGood => {
+                    const { good, count, total } = orderGood;
+                    const { _id, name, price } = good;
+                    const goodItem = document.createElement('li');
+                    goodItem.innerHTML = `
+                        <p>${_id}${name}</p>
+                        <p>Кількість: ${count}</p>
+                        <p>Ціна за одиницю: ${price} грн.</p>
+                        <p>Загальна кількість ${total}</p>
+                    `;
+                    goodsList.appendChild(goodItem);
+                });
+                orderElement.appendChild(goodsList);
+
+                main.appendChild(orderElement);
+            });
+        } else if (status === 'PENDING') {
+            main.innerHTML = `<img src='https://cdn.dribbble.com/users/63485/screenshots/1309731/infinite-gif-preloader.gif' />`;
+        }
+    } catch (error) {
+        console.error('Помилка при отриманні історії замовлень:', error);
+        main.textContent = 'Помилка при отриманні інформації про історію замовлень';
+    }
 };
 
+// Виклик функції для отримання історії замовлень при завантаженні сторінки або зміні маршруту
+historyOrders();
 
 
 
@@ -394,29 +545,31 @@ const drawRegisterForm = () => {
     loginInput.addEventListener('input', checkFormValidity);
     passwordInput.addEventListener('input', checkFormValidity);
     passwordInput2.addEventListener('input', checkFormValidity);
-    
-   
+
+
     if ('token' in store.getState().auth) {
-        
+
         main.innerHTML = '<p>Ви не можете зареєструвати нового користувача.</p>';
     } else {
-        
+
         main.innerHTML = '<h1> Зареєструватися </h1>';
         main.appendChild(formRegister);
 
-        
+
         formRegister.addEventListener('submit', function (event) {
             event.preventDefault();
             const login = loginInput.value.trim();
             const password = passwordInput.value.trim();
             const confirmPassword = passwordInput2.value.trim();
-    
+
             if (login !== '' && password !== '' && confirmPassword !== '' && password === confirmPassword) {
                 store.dispatch(actionFullRegister(login, password));
+
             }
         })
     }
 };
+
 
 
 function drawLoginForm() {
@@ -449,16 +602,16 @@ function drawLoginForm() {
     loginInput.addEventListener('input', checkFormValidity);
     passwordInput.addEventListener('input', checkFormValidity);
 
-    
+
     if ('token' in store.getState().auth) {
-        
+
         main.innerHTML = '<p>Ви вже залогінелись.</p>';
     } else {
-        
+
         main.innerHTML = '<h1> Залогінетись </h1>';
         main.append(loginForm);
 
-        
+
         loginForm.addEventListener('submit', function (event) {
             event.preventDefault();
             const login = loginInput.value.trim();
@@ -490,7 +643,7 @@ store.subscribe(() => {
             if (event.target.classList.contains('add-to-cart-button2')) {
                 const { id, name, price } = event.target.dataset;
                 // Виклик дії Redux для додавання товару до кошика
-                store.dispatch(actionCartAdd({ id, name, price, count: 1 }));
+                store.dispatch(actionCartAdd({ _id, name, price, count: 1 }));
 
             }
 
@@ -498,7 +651,7 @@ store.subscribe(() => {
         });
 
         for (const { url } of images || []) {
-            main.innerHTML += `<div><img style= "max-width:25vw", "max-hight:25vh" src="http://shop-roles.node.ed.asmer.org.ua/${url}"></div>`
+            main.innerHTML += `<div><img style= "max-width:20vw", "max-hight:20vh" src="http://shop-roles.node.ed.asmer.org.ua/${url}"></div>`
         }
 
     }
@@ -513,24 +666,17 @@ store.subscribe(() => {
 
     let count = 0
     for (const _id in cart) {
-        console.log(_id, cart[_id].count, count)
+        console.log(cart[_id], count)
         count += cart[_id].count
     }
     cartIcon.innerHTML = `<h3>  ${count}</h3>`
-    
+
 })
-
-
-
-
-
-
 
 
 store.subscribe(() => {
-    login.innerHTML = ('token' in store.getState().auth ? store.getState().auth.payload.sub.login : "Anna")
+    login.innerHTML = ('token' in store.getState().auth ? store.getState().auth.payload.sub.login : "Ім'я")
 })
-
 
 
 store.subscribe(() => {
@@ -646,34 +792,19 @@ const gqlGoodById = (_id) =>
         { q1: JSON.stringify([{ _id }]) }
     )
 
-const gqlOrderFind = (_id) =>
-    gql(
-        `query myOrder {
-            OrderFind(query: "[{}]") {
-              _id total
-                orderGoods{
-                  good{_id name price}
-                  count
-                  total
-                }
-                 
-              }
-            }`
 
-        ,{ q1: JSON.stringify([{_id}]) }
 
-    )
 
-    const actionFullOrder = () => async (dispatch, getState) => {
-        try {
-            const { cartReducer } = getState();
-            const orderGoods = Object.values(cartReducer).map(item => ({
-                good: { _id: item.good._id },
-                count: item.count
-            }));
-    
-            const gqlOrderGoogs = () =>
-                gql(`
+const actionFullOrder = () => async (dispatch, getState) => {
+    try {
+        const { cart } = getState();
+        const orderGoods = Object.values(cart).map(item => ({
+            good: { _id: item.good._id },
+            count: item.count
+        }));
+
+        const variables = { o: { orderGoods } };
+        const result = await dispatch(actionPromise("ordercreate", gql(`
                 mutation newOrder($o:OrderInput){
                     OrderUpsert(order:$o){
                       _id total
@@ -683,20 +814,20 @@ const gqlOrderFind = (_id) =>
                       }
                     }
                   }
-            `);
-            const variables = { o: { orderGoods } }; 
-            const response = await gqlOrderGoogs(variables);
-    
-            if (response.status !== null) {
-                dispatch(actionCartClear());
-            } else {
-                console.error('Помилка при оформленні замовлення:', response.message);
-            }
-        } catch (error) {
-            console.error('Помилка при оформленні замовлення:', error.message);
+            `, variables)
+        ))
+
+        // console.log(result)
+        if (result.OrderUpsert !== NaN) {
+            dispatch(actionCartClear());
+        } else {
+            console.error('Помилка при оформленні замовлення:', response.message);
         }
-    };
-    
+    } catch (error) {
+        console.error('Помилка при оформленні замовлення:', error.message);
+    }
+};
+
 
 
 const actionRootCats = () =>
@@ -710,18 +841,14 @@ const actionCategoryById = (_id) =>
 const actionGoodById = (_id) =>
     actionPromise('goodById', gqlGoodById(_id))
 
-const actionRegister = (login, password) => actionPromise('register', gqlRegister(login, password))
 
-const actionLogin = (login, password) => actionPromise('login', gqlLogin(login, password))
 
 const actionFullRegister = (login, password) => async (dispatch) => {
     try {
-        const response = await dispatch(actionRegister(login, password));
+        const response = await dispatch(actionPromise('register', gqlRegister(login, password)));
         console.log('Response from registration:', response);
         if (response.UserUpsert !== null) {
             await dispatch(actionFullLogin(login, password));
-
-           
 
         } else {
             console.error('Помилка при реєстрації:', response.error);
@@ -751,65 +878,42 @@ const actionFullLogin = (login, password) => async dispatch => {
 };
 
 
-
-const actionOrderFind = (_id) => actionPromise('orderFind', gqlOrderFind(_id))
-
-const actionPlaceOrder = (orderData) => async (dispatch) => {
-    try {
-        const response = await dispatch(actionPromise('placeOrder', gqlPlaceOrder(orderData)));
-        if (response.status === 'success') {
-            dispatch(actionCartClear());
-        } else {
-            console.error('Помилка при оформленні замовлення:', response.error);
-        }
-    } catch (error) {
-        console.error('Помилка під час оформлення замовлення:', error);
-    }
-};
-
-
-
-
 window.onhashchange = () => {
     const [, route, _id] = location.hash.split('/')
-    
+
     const routes = {
 
         category() {
-            // console.log("категория:", _id)
+            
             store.dispatch(actionCategoryById(_id))
         },
         good() {
-            //тут был store.dispatch goodById
-            // console.log('good', _id)
+       
             store.dispatch(actionGoodById(_id))
         },
         login() {
             // console.log('А ТУТ ЩА ДОЛЖНА БЫТЬ ФОРМА ЛОГИНА')
-            
+
             drawLoginForm()
             //нарисовать форму логина, которая по нажатию кнопки Login делает store.dispatch(actionFullLogin(login, password))
         },
         register() {
-            
+
             drawRegisterForm()
-                    ////нарисовать форму регистрации, которая по нажатию кнопки Login делает store.dispatch(actionFullRegister(login, password))
+            ////нарисовать форму регистрации, которая по нажатию кнопки Login делает store.dispatch(actionFullRegister(login, password))
         },
-  
+
         cart() {
-         // Отримуємо посилання на кошик
-            const cartLink = document.querySelector('a[href="#/cart"]');
+            const { cart } = store.getState();
 
-            // Додаємо обробник подій для кліку по посиланню на кошик
-            cartLink.addEventListener('click', () => {
-                // Отримуємо поточний стан кошика з магазину
-                const { cart } = store.getState();
-                // Викликаємо функцію відображення кошика з поточним вмістом
-                drawCart(Object.values(cart));
-            });
+            console.log(Object.values(cart))
+            // Викликаємо функцію відображення кошика з поточним вмістом
+            drawCart(Object.values(cart));
 
 
-
+        },
+        history() {
+           drawHistory()
         }
     }
 
