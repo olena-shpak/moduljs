@@ -22,11 +22,6 @@ function getGql(url) {
     return gql;
 }
 
-
-
-
-
-
 const gql = getGql("http://shop-roles.node.ed.asmer.org.ua/graphql")
 
 function createStore(reducer) {
@@ -94,7 +89,7 @@ function combineReducers(reducers) {
 }
 
 function cartReducer(state = {}, action) {
-    // debugger
+    
     if (action.type === 'CART_ADD') {
         return {
             ...state,
@@ -223,11 +218,8 @@ const actionPromise = (namePromise, promise) => async dispatch => {
 }
 
 
-
 const store = createStore(combineReducers(reducers)) //не забудьте combineReducers если он у вас уже есть
 store.subscribe(() => console.log(store.getState()))
-
-
 
 
 const drawCategory = () => {
@@ -336,38 +328,40 @@ store.subscribe(drawCart)
 
 
 
-const drawHistory =() => {
+const drawHistory = () => {
     const [, route] = location.hash.split('/');
     if (route !== 'history') return;
 
+ 
     const { status, payload, error } = store.getState().promise.orderFind ;
     if (status === 'PENDING') {
         main.innerHTML = `<img src='https://cdn.dribbble.com/users/63485/screenshots/1309731/infinite-gif-preloader.gif' />`;
     }
     if (status === 'FULFILLED') {
         const orders = payload.OrderFind;
+        
+        const token = store.getState().auth.token;
+    
+        if (!token ) {
+        main.textContent += 'Необхідно авторизуватись для перегляду історії замовлень';
+        return;
+        } 
         if (!orders || orders.length === 0) {
             main.innerHTML = `<p>Ви ще не зробили жодного замовлення.</p>`;
             return;
         }
-        const token = store.getState().auth.token;
-    
-    if (!token ) {
-        main.textContent += 'Необхідно увійти для перегляду історії замовлень';
-        return;
-    } 
 
     main.innerHTML = '<h3>Ваші замовлення</h3>';
 
         orders.forEach(order => {
             const { _id, total, createdAt, orderGoods } = order;
-            const date = new Date(createdAt * 1000);
+            const date = new Date(createdAt/1);
 
             const orderElement = document.createElement('div');
             orderElement.classList.add('order');
 
             const orderId = document.createElement('p');
-            orderId.textContent = ` ${_id}`;
+            orderId.textContent = `№ ${_id}`;
             orderElement.appendChild(orderId);
 
             const orderTotal = document.createElement('p');
@@ -384,10 +378,10 @@ const drawHistory =() => {
                 const { _id, name, price } = good;
                 const goodItem = document.createElement('li');
                 goodItem.innerHTML = `
-                    <p>${_id}${name}</p>
+                    <p>${name}</p>
                     <p>Кількість: ${count}</p>
                     <p>Ціна за одиницю: ${price} грн.</p>
-                    <p>Загальна кількість ${total}</p>
+                    <p>Загальна сума ${total} грн.</p>
                 `;
                 goodsList.appendChild(goodItem);
             });
@@ -397,8 +391,6 @@ const drawHistory =() => {
         });
     }
 };store.subscribe(drawHistory)
-
-
 
 
 const actionOrderFind = () => (dispatch, getState) => {
@@ -437,60 +429,13 @@ const actionOrderFind = () => (dispatch, getState) => {
 
 const historyOrders = async () => {
     try {
-        const result = await store.dispatch(actionOrderFind());
-        const { status, payload, error } = result || {};
+        const { status, payload, error } = await store.dispatch(actionOrderFind());
+       
         
         if (status === 'FULFILLED') {
             const orders = payload.OrderFind;
-            if (!orders || orders.length === 0) {
-                main.innerHTML = `<p>Ви ще не зробили жодного замовлення.</p>`;
-                return;
-            }
-            const token = store.getState().auth.token;
+          
         
-            if (!token) {
-                main.textContent += 'Необхідно увійти для перегляду історії замовлень';
-                return;
-            } 
-        
-            main.innerHTML = '<h3>Ваші замовлення</h3>';
-
-            orders.forEach(order => {
-                const { _id, total, createdAt, orderGoods } = order;
-                const date = new Date(createdAt * 1000);
-
-                const orderElement = document.createElement('div');
-                orderElement.classList.add('order');
-
-                const orderId = document.createElement('p');
-                orderId.textContent = `Замовлення № ${_id}`;
-                orderElement.appendChild(orderId);
-
-                const orderTotal = document.createElement('p');
-                orderTotal.textContent = `Загальна сума: ${total} грн.`;
-                orderElement.appendChild(orderTotal);
-
-                const orderDate = document.createElement('p');
-                orderDate.textContent = `Дата замовлення: ${date.toLocaleString()}`;
-                orderElement.appendChild(orderDate);
-
-                const goodsList = document.createElement('ul');
-                orderGoods.forEach(orderGood => {
-                    const { good, count, total } = orderGood;
-                    const { _id, name, price } = good;
-                    const goodItem = document.createElement('li');
-                    goodItem.innerHTML = `
-                        <p>${_id}${name}</p>
-                        <p>Кількість: ${count}</p>
-                        <p>Ціна за одиницю: ${price} грн.</p>
-                        <p>Загальна кількість ${total}</p>
-                    `;
-                    goodsList.appendChild(goodItem);
-                });
-                orderElement.appendChild(goodsList);
-
-                main.appendChild(orderElement);
-            });
         } else if (status === 'PENDING') {
             main.innerHTML = `<img src='https://cdn.dribbble.com/users/63485/screenshots/1309731/infinite-gif-preloader.gif' />`;
         }
@@ -498,7 +443,7 @@ const historyOrders = async () => {
         console.error('Помилка при отриманні історії замовлень:', error);
         main.textContent = 'Помилка при отриманні інформації про історію замовлень';
     }
-};
+}
 
 // Виклик функції для отримання історії замовлень при завантаженні сторінки або зміні маршруту
 historyOrders();
@@ -564,7 +509,7 @@ const drawRegisterForm = () => {
 
             if (login !== '' && password !== '' && confirmPassword !== '' && password === confirmPassword) {
                 store.dispatch(actionFullRegister(login, password));
-
+                
             }
         })
     }
