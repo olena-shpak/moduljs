@@ -328,7 +328,7 @@ store.subscribe(drawCart)
 
 
 
-const drawHistory = () => {
+store.subscribe(() => {
     const [, route] = location.hash.split('/');
     if (route !== 'history') return;
 
@@ -390,7 +390,8 @@ const drawHistory = () => {
             main.appendChild(orderElement);
         });
     }
-};store.subscribe(drawHistory)
+});
+
 
 
 const actionOrderFind = () => (dispatch, getState) => {
@@ -426,29 +427,6 @@ const actionOrderFind = () => (dispatch, getState) => {
             return "Помилка при отриманні історії замовлень";
         });
     } 
-
-const historyOrders = async () => {
-    try {
-        const { status, payload, error } = await store.dispatch(actionOrderFind());
-       
-        
-        if (status === 'FULFILLED') {
-            const orders = payload.OrderFind;
-          
-        
-        } else if (status === 'PENDING') {
-            main.innerHTML = `<img src='https://cdn.dribbble.com/users/63485/screenshots/1309731/infinite-gif-preloader.gif' />`;
-        }
-    } catch (error) {
-        console.error('Помилка при отриманні історії замовлень:', error);
-        main.textContent = 'Помилка при отриманні інформації про історію замовлень';
-    }
-}
-
-// Виклик функції для отримання історії замовлень при завантаженні сторінки або зміні маршруту
-historyOrders();
-
-
 
 
 
@@ -564,8 +542,9 @@ function drawLoginForm() {
             store.dispatch(actionFullLogin(login, password));
         });
     }
+    
 };
-
+// store.subscribe(drawLoginForm)
 
 
 store.subscribe(() => {
@@ -858,7 +837,7 @@ window.onhashchange = () => {
 
         },
         history() {
-           drawHistory()
+           store.dispatch(actionOrderFind(Object.values(this.cart)))
         }
     }
 
